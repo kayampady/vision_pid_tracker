@@ -2,7 +2,15 @@ import cv2
 from pid import PID
 from vision import detect_blue_object
 
-pid = PID(0.005, 0.0001, 0.002)
+# PID Controllers
+steering_pid = PID(0.005, 0.0001, 0.002)
+speed_pid = PID(0.01, 0.0001, 0.005)
+
+# Desired object height (distance reference)
+DESIRED_HEIGHT = 300
+
+# Deadband to prevent oscillation
+HEIGHT_TOLERANCE = 20
 
 cap = cv2.VideoCapture(0)
 
@@ -11,23 +19,36 @@ while True:
     if not ret:
         break
 
-    height, width, _ = frame.shape
-    center_x = width // 2
+    # Vision Detection
+    frame, mask, error_x, object_height = detect_blue_object(frame)
 
-    error, mask, bbox = detect_blue_object(frame)
+    # Default outputs
+    steering_output = 0
+    speed_output = 0
 
-    steering = 0
+    # Control Logic
+    if error_x is not None and object_height is not None:
 
-    if error is not None:
-        steering = pid.compute(error)
+        # Steering PID
+        steering_output = steering_pid.compute(error_x)
 
-        x, y, w, h = bbox
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        # Distance Error
+        distance_error = DESIRED_HEIGHT - object_height
 
-    cv2.line(frame, (center_x, 0), (center_x, height), (0, 0, 255), 2)
+        # Deadband for stability
+        if abs(distance_error) > HEIGHT_TOLERANCE:
+            speed_output = speed_pid.compute(distance_error)
+        else:
+            speed_output = 0
 
-    cv2.putText(frame, f"Steering: {round(steering, 3)}", (20, 40),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+    # Display Info
+    cv2.putText(frame, f"Steering: {round(steering_output, 2)}",
+                (20, 40), cv2.FONT_HERSHEY_SIMPLEX,
+                1, (255, 0, 0), 2)
+
+    cv2.putText(frame, f"Speed: {round(speed_output, 2)}",
+                (20, 80), cv2.FONT_HERSHEY_SIMPLEX,
+                1, (0, 255, 255), 2)
 
     cv2.imshow("Mask", mask)
     cv2.imshow("Vision PID Tracker", frame)
