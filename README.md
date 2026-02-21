@@ -1,5 +1,17 @@
 Vision-Based Object Tracking with PID Control
 
+## 📝 Technical Blog
+
+I’ve written a detailed technical explanation of this project here:
+
+🔗 [Read the full blog on Dev.to](https://dev.to/kayampady/vision-based-object-tracking-with-dual-pid-control-4m3l)
+
+The blog explains:
+- System architecture
+- Dual PID control logic
+- Closed-loop design
+- Experimental observations
+
 # Overview
 This project implements real-time blue object tracking using computer vision and dual PID control.
 
